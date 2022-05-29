@@ -1,0 +1,287 @@
+<html>
+    <head>
+        <title>
+            Newton-Raphson Fractal
+        </title>
+    </head>
+    <style>
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input::-webkit-color-swatch-wrapper {
+	        padding: 0;
+            margin:0;
+            background:none;
+        }
+    </style>
+    <body>
+        <script src="./math.js"></script>
+        <div style="position: absolute; top: 30px; left: 30px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+            <b>
+                Fractal Render Settings
+            </b> <br> <br>
+            center: (<input type="number" id="centerX" style="width: 45px" value="0">, <input type="number" id="centerY" style="width: 45px" value="0">)<br>
+            view area: <input type="number" id="size" style="width: 70px" value="3">&#178; <br>
+            canvas resolution:  <input type="number" id="resolution1" style="width: 40px" value="50" oninput="updateResolution(1)"> &#215; <input type="number" id="resolution2" oninput="updateResolution()" style="width: 40px" value="50"><br>
+            polynomial: 
+            <select id="cars">
+                <option value="1">f(x) = x^5 + x^2 - x + 1</option>
+                <option value="2">f(x) = x^4 - 1</option>
+                <option value="3">f(x) = x^3 - 1</option>
+
+
+
+            </select><br>
+            iterations: <input type="number" id="iterations" style="width: 40px" min="0" value="15"> <br>
+            color 1: <input type="color" id="color1" value="#ff0000" style="height: 15px; width: 15px"><br>
+            color 2: <input type="color" id="color2" value="#00ff00" style="height: 15px; width: 15px"><br>
+            color 3: <input type="color" id="color3" value="#0000ff" style="height: 15px; width: 15px"><br>
+            color 4: <input type="color" id="color4" value="#ffff00" style="height: 15px; width: 15px"><br>
+            color 5: <input type="color" id="color5" value="#ff00ff" style="height: 15px; width: 15px"><br>
+            color 6: <input type="color" id="color6" value="#ffffff" style="height: 15px; width: 15px"><br>
+            color 7: <input type="color" id="color7" value="#000000" style="height: 15px; width: 15px"><br>
+            color 8: <input type="color" id="color8" value="#808080" style="height: 15px; width: 15px"><br>
+            color 9: <input type="color" id="color9" value="#964B00" style="height: 15px; width: 15px"><br>
+            color 10: <input type="color" id="color10" value="#FFC0CB" style="height: 15px; width: 15px">
+
+            <br><br>
+            <button onclick="render()">Render</button>
+
+        </div>
+    </body>
+    <script>
+
+        let polynomialConstants; // starting at smallest degree: p[0] * 1 + p[1] * x + p[2] * x^2 + p[3] * x^3...
+        let roots;
+        let center = [0, 0];
+        let size;
+        let canvasResolution;
+        let canvasSize;
+        let points;
+        let newPoints = [];
+        let iterations;
+        let colors = ["", "", "", "", "", "", "", "", "", ""];
+       
+        init();
+        render();
+
+        window.addEventListener('resize', init);
+
+        function init() {
+            removeCanvas();
+            createCanvas();
+            render();
+        }
+
+        function render() {
+            setValues();
+            points = makePoints();
+            newFractal();
+            designateColors();
+            paintCanvas();
+        }
+
+        function updateResolution(number) {
+            if (number == 1) {
+                document.getElementById("resolution1").value = document.getElementById("resolution1").value
+                document.getElementById("resolution2").value = document.getElementById("resolution1").value
+            } else {
+                document.getElementById("resolution1").value = document.getElementById("resolution2").value
+                document.getElementById("resolution2").value = document.getElementById("resolution2").value
+            }
+        }
+
+        function setValues() {
+            center[0] = parseFloat(document.getElementById("centerX").value);
+            center[1] = parseFloat(document.getElementById("centerY").value);
+            size = parseFloat(document.getElementById("size").value);
+            canvasResolution = parseFloat(document.getElementById("resolution1").value);
+            iterations = parseFloat(document.getElementById("iterations").value);
+            colors[0] = document.getElementById("color1").value;
+            colors[1] = document.getElementById("color2").value;
+            colors[2] = document.getElementById("color3").value;
+            colors[3] = document.getElementById("color4").value;
+            colors[4] = document.getElementById("color5").value;
+            colors[5] = document.getElementById("color6").value;
+            colors[6] = document.getElementById("color7").value;
+            colors[7] = document.getElementById("color8").value;
+            colors[8] = document.getElementById("color9").value;
+            colors[9] = document.getElementById("color10").value;
+
+
+            switch (parseFloat(document.getElementById("cars").value)) {
+                case 1:
+                    polynomialConstants = [1, -1, 1, 0, 0, 1]; // starting at smallest degree: p[0] * 1 + p[1] * x + p[2] * x^2 + p[3] * x^3...
+                    roots = [
+                        [-1.32, 0],
+                        [0.66, -0.56],
+                        [0.66, 0.56],
+                        [0, 1.54],
+                        [0, -1.54]
+                    ];
+                break;
+                case 2:
+                    polynomialConstants = [-1, 0, 0, 0, 1]; // starting at smallest degree: p[0] * 1 + p[1] * x + p[2] * x^2 + p[3] * x^3...
+                    roots = [
+                        [1, 0],
+                        [-1, 0],
+                        [0, 1],
+                        [0, -1],
+
+                    ];
+                break;
+                case 3:
+                    polynomialConstants = [-1, 0, 0, 1]; // starting at smallest degree: p[0] * 1 + p[1] * x + p[2] * x^2 + p[3] * x^3...
+                    roots = [
+                        [1, 0],
+                        [-0.5, +0.87],
+                        [-0.5, -0.87],
+                    ];
+                break;
+
+            }
+        }
+
+        function removeCanvas() {
+            if(document.getElementById("output")) {
+                document.getElementById("output").remove();
+            }
+        }
+
+        function createCanvas() {
+            let canvas = document.createElement("CANVAS");
+            canvas.id = "output";
+            canvas.width = Math.min(window.innerWidth, window.innerHeight);
+            canvas.height = Math.min(window.innerWidth, window.innerHeight);
+            canvas.style.position = "absolute";
+            canvas.style.width = Math.min(window.innerWidth, window.innerHeight);
+            canvas.style.height = Math.min(window.innerWidth, window.innerHeight);
+            if (window.innerWidth > window.innerHeight) {
+                canvas.style.top = 0;
+                canvas.style.left = "50%";
+                canvas.style.marginLeft = -0.5 * Math.min(window.innerHeight);
+            } else {
+                canvas.style.left = 0;
+                canvas.style.top = "50%";
+                canvas.style.marginTop = -0.5 * Math.min(window.innerWidth);
+            }
+            canvasSize =  Math.min(window.innerWidth, window.innerHeight)
+        document.body.appendChild(canvas);
+        }
+
+        
+
+        //let complexNumber = math.complex(-0.5, 0.5);
+        //let outputNumber = complexNumber;
+
+
+
+
+        function newFractal () {
+            for(let i = 0; i < points.length; i++) {
+                let complexNumber = math.complex(points[i][0], points[i][1]);
+                for (let i = 0; i < iterations; i++) {
+                    complexNumber = getNextNewtonEstimation(complexNumber);
+                }
+                points[i][0] = complexNumber.re;
+                points[i][1] = complexNumber.im;
+            }
+       }
+
+        function designateColors() {
+            points[0][4] = colors[0];
+       
+            for(let i = 1; i < points.length; i++) {
+                let closestGroup = 0;
+                let closestDistance = 100;
+                for (let j = 0; j < roots.length; j++) {
+                    if (distanceAway(roots[j][0], points[i][0], roots[j][1], points[i][1]) < closestDistance) {
+                        closestGroup = j;
+                        closestDistance = distanceAway(roots[j][0], points[i][0], roots[j][1], points[i][1]);
+                    }
+                }
+                points[i][4] = colors[closestGroup];
+            }
+        }
+
+
+        function distanceAway (x1, x2, y1, y2) {
+            return Math.sqrt(((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1)))
+        }
+
+        function whichGroup(roots, point) {
+            for (let i = 0; i < roots.length; i++) {
+                if (distance(roots[i][0], roots[i][1], point[0], point[1]) <= 0.25) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        function paintCanvas () {
+            let canvas = document.getElementById("output");
+            let ctx = canvas.getContext("2d");
+            let resolutionMultiplier = canvasSize / canvasResolution;
+            ctx.beginPath();
+            for(let i = 0; i < points.length; i++) {
+                ctx.fillStyle = points[i][4];
+                ctx.fillRect(points[i][2] * resolutionMultiplier, points[i][3] * resolutionMultiplier, resolutionMultiplier, resolutionMultiplier);
+            }
+        }
+
+        function makePoints () {
+            let pointsToReturn = [];
+            for(let x = 0; x < canvasResolution; x++) {
+                for(let y = 0; y < canvasResolution; y++) {
+                    let xPoint = ((size * 2 * (x / canvasResolution)) - size) + center[0];
+                    let yPoint = ((size * 2 * (y / canvasResolution)) - size) + center[1];
+                    pointsToReturn.push([xPoint, yPoint, x, y, "#000000", xPoint, yPoint]);
+                }
+            }
+
+
+            return pointsToReturn;
+        }
+
+        function getNextNewtonEstimation(complexNumber) {
+            return math.subtract(complexNumber, math.divide(f(complexNumber), fPrime(complexNumber)));
+        }
+
+        function f (complexNumber) {
+            let output = math.complex(polynomialConstants[0], 0);
+            for (let i = 1; i < polynomialConstants.length; i++) {
+                let xAtThisDegree = complexNumber;
+                for (let j = 0; j < i - 1; j++) {
+                    xAtThisDegree = math.multiply(xAtThisDegree, complexNumber);
+                }
+                output = math.add(math.multiply(polynomialConstants[i], xAtThisDegree), output)
+            } 
+            return output;
+        }
+
+        function fPrime (complexNumber) {
+            let derivativeOfPolynomial = defineDerivativeOfPolynomial(); 
+            derivativeOfPolynomial = defineDerivativeOfPolynomial()
+            let output = math.complex(derivativeOfPolynomial[0], 0);
+            for (let i = 1; i < derivativeOfPolynomial.length; i++) {
+                let xAtThisDegree = complexNumber;
+                for (let j = 0; j < i - 1; j++) {
+                    xAtThisDegree = math.multiply(xAtThisDegree, complexNumber);
+                }
+                output = math.add(math.multiply(derivativeOfPolynomial[i], xAtThisDegree), output)
+            } 
+            return output;
+        }
+
+        function defineDerivativeOfPolynomial() {
+            let derivativeOfPolynomial = []; 
+            for (let i = 1; i < polynomialConstants.length; i++) {
+                derivativeOfPolynomial.push(polynomialConstants[i] * i);
+            }
+            return derivativeOfPolynomial;
+        }
+    
+    </script>
+</html>
